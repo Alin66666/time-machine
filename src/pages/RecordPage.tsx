@@ -11,9 +11,6 @@ import QuickRecord from '../components/memory/QuickRecord'
 import ConfettiOverlay from '../components/memory/ConfettiOverlay'
 import SaveConfirmation from '../components/memory/SaveConfirmation'
 import AIAssistant from '../components/ai/AIAssistant'
-import { checkAndUnlock } from '../lib/achievements'
-import { getAllMemories } from '../db/operations'
-import { useAchievementStore } from '../store/achievementStore'
 
 type RecordMode = 'quick' | 'deep'
 
@@ -26,7 +23,6 @@ export default function RecordPage() {
   const [saving, setSaving] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const [mode, setMode] = useState<RecordMode>('quick')
-  const addToQueue = useAchievementStore((s) => s.addToQueue)
 
   useEffect(() => {
     if (id) {
@@ -52,12 +48,6 @@ export default function RecordPage() {
       await save(savedMemory)
       store.markClean()
       setShowConfetti(true)
-      // Check achievements
-      getAllMemories().then((all) => {
-        checkAndUnlock(all, savedMemory).then((newBadges) => {
-          if (newBadges.length > 0) addToQueue(newBadges)
-        })
-      })
       setTimeout(() => setStep('saved'), 600)
     } catch {
       toast.error('保存失败，请重试')

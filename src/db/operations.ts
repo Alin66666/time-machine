@@ -76,13 +76,29 @@ export async function importMemories(json: string): Promise<void> {
   await db.memories.bulkAdd(memories)
 }
 
-// === Achievements ===
+// === Fish Crackers ===
 
-export async function getEarnedBadges(): Promise<import('../types/memory').EarnedBadge[]> {
-  return db.achievements.toArray()
+export async function addFishCrackers(amount: number, memoryId?: string): Promise<void> {
+  const record: import('../types/memory').FishCrackerRecord = {
+    id: crypto.randomUUID(),
+    amount,
+    memoryId,
+    earnedAt: new Date().toISOString(),
+  }
+  await db.fishCrackers.add(record)
 }
 
-export async function getAllBadgeIds(): Promise<Set<string>> {
-  const badges = await db.achievements.toCollection().primaryKeys()
-  return new Set(badges as string[])
+export async function getTotalFishCrackers(): Promise<number> {
+  const records = await db.fishCrackers.toArray()
+  return records.reduce((sum, r) => sum + r.amount, 0)
+}
+
+export async function getNianNianState(): Promise<import('../types/memory').NianNianState> {
+  const state = await db.nianNianState.get('current')
+  return state || { id: 'current', totalFishCrackers: 0, level: 1 }
+}
+
+export async function updateNianNianState(partial: Partial<import('../types/memory').NianNianState>): Promise<void> {
+  const current = await getNianNianState()
+  await db.nianNianState.put({ ...current, ...partial, id: 'current' })
 }

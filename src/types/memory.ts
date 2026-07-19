@@ -153,25 +153,17 @@ export interface ResponsePayload {
 
 export type ImportMode = 'owner' | 'co-creator'
 
-// === Achievements ===
+// === Fish Crackers & NianNian ===
 
-export type BadgeTier = 'bronze' | 'silver' | 'gold' | 'diamond'
-
-export interface BadgeDef {
+export interface FishCrackerRecord {
   id: string
-  name: string
-  description: string
-  emoji: string
-  tier: BadgeTier
-  check: (ctx: AchievementContext) => boolean
-}
-
-export interface AchievementContext {
-  allMemories: Memory[]
-  currentMemory?: Memory
-}
-
-export interface EarnedBadge {
-  id: string
+  amount: number
+  memoryId?: string
   earnedAt: string
+}
+
+export interface NianNianState {
+  id: string
+  totalFishCrackers: number
+  level: number
 }

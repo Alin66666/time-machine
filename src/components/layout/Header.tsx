@@ -1,18 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Hourglass, PenLine, GalleryHorizontalEnd, Settings, Orbit, Trophy } from 'lucide-react'
+import { Hourglass, PenLine, Settings, Orbit } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { useAchievementStore } from '../../store/achievementStore'
 
 const links = [
+  { to: '/', label: '宇宙', icon: Orbit },
   { to: '/record', label: '记录', icon: PenLine },
-  { to: '/revisit', label: '重温', icon: GalleryHorizontalEnd },
-  { to: '/universe', label: '宇宙', icon: Orbit },
   { to: '/settings', label: '设置', icon: Settings },
 ]
 
 export default function Header() {
   const location = useLocation()
-  const setWallOpen = useAchievementStore((s) => s.setWallOpen)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-border bg-bg/80 backdrop-blur-xl">
@@ -23,13 +20,6 @@ export default function Header() {
         </Link>
 
         <nav className="flex items-center gap-1">
-          <button
-            onClick={() => setWallOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm transition-colors text-text-muted hover:text-amber-500 hover:bg-bg-card/50"
-          >
-            <Trophy className="h-4 w-4" />
-            <span>勋章</span>
-          </button>
           {links.map(({ to, label, icon: Icon }) => {
             const active = location.pathname.startsWith(to)
             return (

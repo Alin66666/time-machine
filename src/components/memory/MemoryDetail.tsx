@@ -302,7 +302,10 @@ export default function MemoryDetail({ memory, onToggleFavorite, onPhotoDelete }
                 </div>
               )}
               {memory.aiEnriched.summary && (
-                <p className="mt-3 max-w-xl text-sm leading-relaxed text-text-muted italic">{memory.aiEnriched.summary}</p>
+                <div className="mt-3 rounded-xl border border-amber-500/15 bg-amber-500/5 px-4 py-3">
+                  <p className="text-[10px] text-amber-500/60 mb-1">🐱 念念读后的叨叨</p>
+                  <p className="max-w-xl text-sm leading-relaxed text-text/80">{memory.aiEnriched.summary}</p>
+                </div>
               )}
             </div>
             <button onClick={onToggleFavorite} className="rounded-full bg-black/30 p-2 backdrop-blur-sm">
