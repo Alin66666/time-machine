@@ -10,6 +10,7 @@ interface PlanetProps {
   position: [number, number, number]
   onClick: (memory: Memory) => void
   isSelected: boolean
+  isHighlighted: boolean
 }
 
 // Calculate how "complete" a memory is
@@ -140,7 +141,7 @@ function DotRing({
   )
 }
 
-export default function Planet({ memory, position, onClick, isSelected }: PlanetProps) {
+export default function Planet({ memory, position, onClick, isSelected, isHighlighted }: PlanetProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
   const glowRef = useRef<THREE.Mesh>(null)
@@ -317,6 +318,14 @@ export default function Planet({ memory, position, onClick, isSelected }: Planet
         >
           {titleLabel}
         </Text>
+      )}
+
+      {/* Echo-highlighted ring — golden pulse for memory chain planets */}
+      {isHighlighted && !isSelected && (
+        <mesh>
+          <ringGeometry args={[baseSize * 1.65, baseSize * 1.75, 120]} />
+          <meshBasicMaterial color="#FFD54F" transparent opacity={0.7} depthWrite={false} />
+        </mesh>
       )}
 
       {/* Selection indicator ring with pulse */}

@@ -8,6 +8,7 @@ import Planet from './Planet'
 interface UniverseCanvasProps {
   memories: Memory[]
   selectedId: string | null
+  highlightIds: string[]
   onSelectMemory: (memory: Memory) => void
 }
 
@@ -153,7 +154,8 @@ function StardustParticles({ count, radius, colors, size }: { count: number; rad
   )
 }
 
-export default function UniverseCanvas({ memories, selectedId, onSelectMemory }: UniverseCanvasProps) {
+export default function UniverseCanvas({ memories, selectedId, highlightIds, onSelectMemory }: UniverseCanvasProps) {
+  const highlightSet = useMemo(() => new Set(highlightIds), [highlightIds])
   const controlsRef = useRef<any>(null)
 
   const handleClick = useCallback((memory: Memory) => {
@@ -193,6 +195,7 @@ export default function UniverseCanvas({ memories, selectedId, onSelectMemory }:
             position={getGalaxyPosition(index, memories.length)}
             onClick={handleClick}
             isSelected={memory.id === selectedId}
+            isHighlighted={highlightSet.has(memory.id)}
           />
         ))}
 

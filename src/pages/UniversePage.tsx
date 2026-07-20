@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { Plus, Sparkles, PenLine, Hourglass, Settings, Orbit } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import UniverseCanvas from '../components/universe/UniverseCanvas'
 import PlanetDetail from '../components/universe/PlanetDetail'
 import type { Memory } from '../types/memory'
@@ -13,6 +13,8 @@ export default function UniversePage() {
   const [memories, setMemories] = useState<Memory[]>([])
   const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null)
   const [loading, setLoading] = useState(true)
+  const [searchParams] = useSearchParams()
+  const highlightIds = searchParams.get('highlight')?.split(',') || []
   const [showCreateHint, setShowCreateHint] = useState(false)
 
   const loadMemories = useCallback(async () => {
@@ -77,6 +79,7 @@ export default function UniversePage() {
       <UniverseCanvas
         memories={memories}
         selectedId={selectedMemory?.id ?? null}
+        highlightIds={highlightIds}
         onSelectMemory={handleSelectMemory}
       />
 

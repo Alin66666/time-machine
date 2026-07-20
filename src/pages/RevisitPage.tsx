@@ -1,13 +1,17 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
+import { Sparkles } from 'lucide-react'
 import { Spinner } from '../components/ui/Spinner'
 import GalleryFilter from '../components/gallery/GalleryFilter'
 import GalleryGrid from '../components/gallery/GalleryGrid'
+import MemoryEcho from '../components/memory/MemoryEcho'
 import type { FilterState } from '../components/gallery/GalleryFilter'
 import { useMemories } from '../hooks/useMemories'
 import { updateMemory, getMemoryById, deleteMemory } from '../db/operations'
 import { useSettingsStore } from '../store/settingsStore'
+import { emotions } from '../constants/emotions'
 
 export default function RevisitPage() {
   const navigate = useNavigate()
@@ -15,6 +19,7 @@ export default function RevisitPage() {
   const { apiKey } = useSettingsStore()
   const [aiSearching, setAiSearching] = useState(false)
   const [aiResults, setAiResults] = useState<string[] | null>(null)
+  const [echoActive, setEchoActive] = useState(false)
 
   const [filter, setFilter] = useState<FilterState>({
     search: '',
@@ -146,6 +151,12 @@ export default function RevisitPage() {
 
   const hasFilter = !!(filter.search || filter.selectedEmotion || filter.selectedPerson || filter.selectedLocation || filter.onThisDay || aiResults)
 
+  const echoLabel = filter.selectedEmotion
+    ? (emotions.find((e) => e.id === filter.selectedEmotion)?.label || '')
+    : (filter.search.trim() || '这段情感')
+
+  const showEcho = filtered.length >= 2
+
   const handleDelete = useCallback(async (id: string) => {
     if (!window.confirm('确定要删除这段记忆吗？此操作不可撤销。')) return
     try {
@@ -213,6 +224,22 @@ export default function RevisitPage() {
         />
       </div>
 
+      {/* Memory Echo trigger */}
+      {showEcho && !echoActive && (
+        <div className="mb-6 flex justify-center">
+          <button
+            onClick={() => setEchoActive(true)}
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500/10 to-pink-500/10 border border-amber-500/20 px-6 py-3.5 text-sm text-amber-500 hover:from-amber-500/20 hover:to-pink-500/20 hover:shadow-lg hover:shadow-amber-500/10 transition-all"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="font-medium">记忆回响</span>
+            <span className="text-text-muted text-xs">
+              串联 {filtered.length} 段关于「{echoLabel}」的记忆
+            </span>
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <Spinner text="加载记忆中..." />
       ) : (
@@ -224,6 +251,21 @@ export default function RevisitPage() {
           onClearFilter={handleClearFilter}
         />
       )}
+
+      {/* Memory Echo overlay */}
+      <AnimatePresence>
+        {echoActive && (
+          <MemoryEcho
+            memories={filtered}
+            filterLabel={echoLabel}
+            onClose={() => setEchoActive(false)}
+            onViewInUniverse={(ids) => {
+              setEchoActive(false)
+              navigate(`/universe?highlight=${ids.join(',')}`)
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

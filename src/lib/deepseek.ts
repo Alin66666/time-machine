@@ -227,6 +227,100 @@ export async function chatWithContext(
   return text
 }
 
+// Memory chain analysis for 记忆回响
+export interface MemorySnapshot {
+  id: string
+  title: string
+  date: string
+  emotion: string
+  emotionLabel: string
+  moodDescription: string
+  location: string
+  people: string[]
+  summary: string
+  tags: string[]
+  photoCount: number
+}
+
+export interface ChainNarration {
+  theme: string           // overall theme sentence
+  memories: Array<{
+    id: string
+    narration: string     // 2-3 sentence narration for this memory
+    transition: string    // connecting phrase to next memory (empty for last)
+  }>
+  closing: string         // 3-4 sentence closing summary
+}
+
+export async function analyzeMemoryChain(
+  memories: MemorySnapshot[],
+  filterLabel: string
+): Promise<ChainNarration> {
+  const memList = memories.map((m, i) =>
+    `[记忆${i + 1}]
+标题：${m.title}
+日期：${m.date}
+情绪：${m.emotionLabel}
+感受（这是用户本人写下的原话）：${m.moodDescription || '未填写'}
+地点：${m.location || '未填写'}
+同行者：${m.people.length > 0 ? m.people.join('、') : '独自一人'}
+标签：${m.tags.join('、')}`
+  ).join('\n\n')
+
+  const text = await chat(
+    [
+      {
+        role: 'system',
+        content: `你是一个温暖、细腻的记忆伙伴。用户在重温自己人生中关于"${filterLabel}"的${memories.length}段记忆。
+
+这些记忆跨越了时间，但都有着相似的情感底色。你的任务是在这些记忆之间找到隐藏的连线——情绪的变化、人物的来去、地点的转换、心态的成长。
+
+请为每段记忆写一段2-3句话的导语（口语化、有温度、像朋友在身边轻声说）。然后写一段总结（3-4句），概括这些记忆串联起来的"情感轨迹"。
+
+⚠️ 重要规则：
+- 严格基于用户提供的事实，绝对不要杜撰任何细节
+- 不要猜测谁在做什么动作、手里拿什么、穿什么衣服
+- 不要编造具体的对话内容或场景细节
+- 如果记忆中没有某个信息，就不要提及它
+- "感受"字段是用户本人的原话，要尊重原文
+- 只描述你已经知道的事情：时间、地点、情绪、同行者
+- 模糊的地方用诗意的留白代替，而不是编造
+
+返回纯JSON，不要markdown包裹。`,
+      },
+      {
+        role: 'user',
+        content: `以下是用户的${memories.length}段记忆：
+
+${memList}
+
+请分析这些记忆并为每段写导语。JSON格式：
+{
+  "theme": "一句话主题概括",
+  "memories": [
+    {
+      "id": "第一段记忆的id",
+      "narration": "对第一段记忆的2-3句导语，引导用户进入这段回忆",
+      "transition": "连接语，引导到下一段（最后一段不需要transition）"
+    },
+    ...
+  ],
+  "closing": "3-4句总结，概括情感轨迹，让用户感受到自己的成长与变化"
+}
+
+注意：
+- narration要有温度，像朋友在耳边轻声回忆
+- transition是连接两段记忆的桥梁（最后一段不需要）
+- closing要让人感受到"原来我的开心是这样变化的"这种领悟
+- 基于事实，不要杜撰记忆中没有的内容`,
+      },
+    ],
+    { jsonMode: true, temperature: 0.8, maxTokens: 3000 }
+  )
+
+  return extractJson(text) as ChainNarration
+}
+
 export async function aiSearch(
   query: string,
   memoriesJson: string
