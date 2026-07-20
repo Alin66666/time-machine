@@ -289,7 +289,7 @@ export default function AIQuickFill({ onSaved }: AIQuickFillProps) {
         {step === 'preview' && aiResult && (
           <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             {/* AI summary banner */}
-            {aiResult.summary && (
+            {!!aiResult.summary && (
               <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
                 <p className="text-xs text-amber-500/60 mb-1">AI 读后的感受</p>
                 <p className="text-sm leading-relaxed text-text">{String(aiResult.summary)}</p>
