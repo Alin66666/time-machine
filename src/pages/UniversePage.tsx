@@ -190,6 +190,7 @@ export default function UniversePage() {
       <AnimatePresence>
         {selectedMemory && (
           <PlanetDetail
+            key={selectedMemory.id}
             memory={selectedMemory}
             onClose={handleCloseDetail}
             onMemoryUpdate={handleMemoryUpdate}

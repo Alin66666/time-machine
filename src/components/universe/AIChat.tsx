@@ -40,6 +40,11 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
         setMessages(chat.messages)
         const savedPersonality = personalities.find((p) => p.id === chat.personality)
         if (savedPersonality) setPersonality(savedPersonality)
+      } else {
+        // Different memory with no chat — reset everything
+        setMessages([])
+        setPhase('intro')
+        setPersonality(personalities[0])
       }
     })
   }, [memory.id])
