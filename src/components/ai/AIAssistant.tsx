@@ -5,9 +5,6 @@ import { toast } from 'sonner'
 import { useMemoryStore } from '../../store/memoryStore'
 import { useSettingsStore } from '../../store/settingsStore'
 import { runAIEnrichment } from '../../lib/deepseek'
-import { checkAndUnlock } from '../../lib/achievements'
-import { getAllMemories } from '../../db/operations'
-import { useAchievementStore } from '../../store/achievementStore'
 import AIProcessingModal from './AIProcessingModal'
 
 const modes = [
@@ -22,7 +19,6 @@ export default function AIAssistant() {
   const [processing, setProcessing] = useState(false)
   const { memory, setDimensions, setTags } = useMemoryStore()
   const { apiKey } = useSettingsStore()
-  const addToQueue = useAchievementStore((s) => s.addToQueue)
 
   const handleEnrich = async (selectedModes: string[]) => {
     if (!apiKey) {
@@ -63,12 +59,6 @@ export default function AIAssistant() {
       }
 
       toast.success('AI 润色完成！')
-      // Check AI achievement
-      getAllMemories().then((all) => {
-        checkAndUnlock(all).then((newBadges) => {
-          if (newBadges.length > 0) addToQueue(newBadges)
-        })
-      })
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'AI 服务暂时不可用'
       toast.error(msg)

@@ -28,7 +28,7 @@ export default function TagInput({ tags, onChange, placeholder = '输入标签�
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-x-2 gap-y-2">
         {tags.map((tag) => (
           <Tag key={tag} label={tag} onRemove={() => onChange(tags.filter((t) => t !== tag))} />
         ))}
@@ -42,7 +42,7 @@ export default function TagInput({ tags, onChange, placeholder = '输入标签�
         className="w-full rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-text placeholder:text-text-muted/50 focus:border-amber-500/50 focus:outline-none"
       />
       {suggestions.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2">
           {suggestions
             .filter((s) => !tags.includes(s))
             .slice(0, 8)

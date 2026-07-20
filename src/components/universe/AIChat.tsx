@@ -4,8 +4,8 @@ import { Sparkles, Send, User, Bot } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSettingsStore } from '../../store/settingsStore'
 import { chatWithContext } from '../../lib/deepseek'
-import type { Memory } from '../../types/memory'
-import { updateMemory } from '../../db/operations'
+import type { Memory, ChatRecord } from '../../types/memory'
+import { updateMemory, getChatByMemoryId, saveChat } from '../../db/operations'
 
 interface Message {
   role: 'ai' | 'user'
@@ -29,13 +29,38 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [personality, setPersonality] = useState(personalities[0])
-  const [phase, setPhase] = useState<'intro' | 'chatting' | 'done'>('intro')
+  const [phase, setPhase] = useState<'intro' | 'chatting'>('intro')
   const { apiKey } = useSettingsStore()
   const chatEndRef = useRef<HTMLDivElement>(null)
+
+  // Load existing chat from DB on mount (pre-select personality, don't skip intro)
+  useEffect(() => {
+    getChatByMemoryId(memory.id).then((chat) => {
+      if (chat && chat.messages.length > 0) {
+        setMessages(chat.messages)
+        const savedPersonality = personalities.find((p) => p.id === chat.personality)
+        if (savedPersonality) setPersonality(savedPersonality)
+      }
+    })
+  }, [memory.id])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const persistChat = (msgs: Message[], pers: string) => {
+    getChatByMemoryId(memory.id).then((existing) => {
+      const record: ChatRecord = {
+        id: `chat_${memory.id}`,
+        memoryId: memory.id,
+        messages: msgs,
+        personality: pers,
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+      saveChat(record)
+    })
+  }
 
   const getMissingDimensions = (): string[] => {
     const d = memory.dimensions
@@ -59,13 +84,19 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
     }
 
     setPhase('chatting')
+
+    // If we already have messages from DB, just continue — user picked a style (maybe changed it)
+    if (messages.length > 0) {
+      persistChat(messages, personality.id)
+      return
+    }
+
     const missing = getMissingDimensions()
 
     if (missing.length === 0) {
-      setMessages([{
-        role: 'ai',
-        content: '你的这颗星球已经很丰满了！✨ 每一段记忆都闪闪发光。我们随便聊聊吧，关于这段时光，你还有什么想分享的吗？',
-      }])
+      const msg = { role: 'ai' as const, content: '你的这颗星球已经很丰满了！✨ 每一段记忆都闪闪发光。我们随便聊聊吧，关于这段时光，你还有什么想分享的吗？' }
+      setMessages([msg])
+      persistChat([msg], personality.id)
       return
     }
 
@@ -86,6 +117,7 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
       )
 
       setMessages([{ role: 'ai', content: text }])
+      persistChat([{ role: 'ai', content: text }], personality.id)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'AI 服务暂不可用'
       toast.error(msg)
@@ -100,7 +132,8 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
 
     const userMsg = input.trim()
     setInput('')
-    setMessages((prev) => [...prev, { role: 'user', content: userMsg }])
+    const withUser: Message[] = [...messages, { role: 'user', content: userMsg }]
+    setMessages(withUser)
     setSending(true)
 
     try {
@@ -125,11 +158,10 @@ ${JSON.stringify(memory.dimensions, null, 2)}
 
       const text = await chatWithContext(
         [
-          ...messages.map((m) => ({
+          ...withUser.map((m) => ({
             role: (m.role === 'ai' ? 'assistant' : 'user') as 'user' | 'assistant',
             content: m.content,
           })),
-          { role: 'user' as const, content: userMsg },
         ],
         systemPrompt
       )
@@ -160,19 +192,9 @@ ${JSON.stringify(memory.dimensions, null, 2)}
 
       // Clean the response (remove JSON block)
       const cleanText = text.replace(/```json[\s\S]*?```/, '').trim()
-      setMessages((prev) => [...prev, { role: 'ai', content: cleanText || text.trim() }])
-
-      // Check if all dimensions are filled
-      const remaining = getMissingDimensions()
-      if (remaining.length === 0 && messages.length > 6) {
-        setTimeout(() => {
-          setMessages((prev) => [
-            ...prev,
-            { role: 'ai', content: '感觉这颗星球已经充满了温度和故事！✨ 它现在会在你的宇宙中永远发光了。随时可以再回来聊聊。' },
-          ])
-          setPhase('done')
-        }, 1000)
-      }
+      const withAi: Message[] = [...withUser, { role: 'ai', content: cleanText || text.trim() }]
+      setMessages(withAi)
+      persistChat(withAi, personality.id)
     } catch (e) {
       const msg = e instanceof Error ? e.message : '发送失败，请重试'
       toast.error(msg)
@@ -184,9 +206,27 @@ ${JSON.stringify(memory.dimensions, null, 2)}
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-amber-500" />
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
+        <Sparkles className="h-5 w-5 text-amber-500 shrink-0" />
         <h3 className="font-medium text-text">点亮这颗星球</h3>
+        {phase === 'chatting' && (
+          <div className="flex gap-1 ml-auto">
+            {personalities.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setPersonality(p)}
+                className={`text-xs px-2 py-1 rounded-lg transition-all ${
+                  personality.id === p.id
+                    ? 'bg-amber-500/20 text-amber-500'
+                    : 'text-text-muted hover:text-text hover:bg-white/5'
+                }`}
+                title={p.label}
+              >
+                {p.emoji}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Intro phase */}
@@ -287,17 +327,6 @@ ${JSON.stringify(memory.dimensions, null, 2)}
             </button>
           </div>
         </>
-      )}
-
-      {/* Done phase */}
-      {phase === 'done' && (
-        <div className="flex-1 flex flex-col items-center justify-center py-8">
-          <div className="text-5xl mb-4">🌟</div>
-          <p className="text-text font-medium mb-2">这颗星球已完全点亮！</p>
-          <p className="text-sm text-text-muted text-center">
-            它现在会在你的宇宙中永远发光。
-          </p>
-        </div>
       )}
     </div>
   )

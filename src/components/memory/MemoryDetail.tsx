@@ -67,7 +67,7 @@ export default function MemoryDetail({ memory, onToggleFavorite, onPhotoDelete }
             {/* Photo wall grid */}
             <div className="grid grid-cols-3 gap-2">
               {d.visual.photos.map((photo, idx) => (
-                <div key={idx} className="relative aspect-[3/4] rounded-xl overflow-hidden group">
+                <div key={idx} className="relative aspect-[4/3] rounded-xl overflow-hidden group">
                   <img src={photo} alt="" className="h-full w-full object-cover" />
                   {onPhotoDelete && (
                     <button
@@ -295,7 +295,7 @@ export default function MemoryDetail({ memory, onToggleFavorite, onPhotoDelete }
                 <p className="mt-1 text-xs text-text-muted">📍 {d.environment.location}</p>
               )}
               {memory.tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {memory.tags.map((t) => (
                     <span key={t} className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs text-text-muted">{t}</span>
                   ))}

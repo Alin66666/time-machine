@@ -32,7 +32,7 @@ export function Tag({ label, color, onRemove, onClick, active, className }: TagP
             e.stopPropagation()
             onRemove()
           }}
-          className="ml-0.5 rounded-full p-0.5 hover:bg-white/10"
+          className="inline-flex items-center justify-center ml-0.5 rounded-full p-0.5 hover:bg-white/10"
         >
           <X className="h-3 w-3" />
         </button>

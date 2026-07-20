@@ -2,8 +2,6 @@ import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Layout from './components/layout/Layout'
 import BackgroundMusic from './components/layout/BackgroundMusic'
-import AchievementUnlock from './components/achievements/AchievementUnlock'
-import AchievementWall from './components/achievements/AchievementWall'
 import HomePage from './pages/HomePage'
 import RecordPage from './pages/RecordPage'
 import RevisitPage from './pages/RevisitPage'
@@ -12,14 +10,8 @@ import SettingsPage from './pages/SettingsPage'
 import CoCreatePage from './pages/CoCreatePage'
 import GoToLatestPage from './pages/GoToLatestPage'
 import UniversePage from './pages/UniversePage'
-import { useAchievementStore } from './store/achievementStore'
 
 export default function App() {
-  const unlockQueue = useAchievementStore((s) => s.unlockQueue)
-  const clearQueue = useAchievementStore((s) => s.clearQueue)
-  const wallOpen = useAchievementStore((s) => s.wallOpen)
-  const setWallOpen = useAchievementStore((s) => s.setWallOpen)
-
   return (
     <>
       <Toaster
@@ -46,8 +38,6 @@ export default function App() {
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
-      <AchievementUnlock queue={unlockQueue} onComplete={clearQueue} />
-      <AchievementWall open={wallOpen} onClose={() => setWallOpen(false)} />
     </>
   )
 }

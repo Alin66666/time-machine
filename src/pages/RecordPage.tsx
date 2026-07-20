@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Zap, Layers } from 'lucide-react'
+import { ArrowLeft, Layers, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '../components/ui/Button'
 import { useMemoryStore } from '../store/memoryStore'
 import { useMemory } from '../hooks/useMemory'
 import MemoryForm from '../components/memory/MemoryForm'
-import QuickRecord from '../components/memory/QuickRecord'
 import ConfettiOverlay from '../components/memory/ConfettiOverlay'
 import SaveConfirmation from '../components/memory/SaveConfirmation'
 import AIAssistant from '../components/ai/AIAssistant'
-import { checkAndUnlock } from '../lib/achievements'
-import { getAllMemories } from '../db/operations'
-import { useAchievementStore } from '../store/achievementStore'
+import AIQuickFill from '../components/memory/AIQuickFill'
 
-type RecordMode = 'quick' | 'deep'
+type RecordMode = 'ai' | 'deep'
 
 export default function RecordPage() {
   const navigate = useNavigate()
@@ -25,8 +22,7 @@ export default function RecordPage() {
   const [step, setStep] = useState<'form' | 'saved'>('form')
   const [saving, setSaving] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [mode, setMode] = useState<RecordMode>('quick')
-  const addToQueue = useAchievementStore((s) => s.addToQueue)
+  const [mode, setMode] = useState<RecordMode>('ai')
 
   useEffect(() => {
     if (id) {
@@ -42,22 +38,17 @@ export default function RecordPage() {
   }, [id])
 
   const handleSave = async () => {
-    if (!store.memory.title.trim()) {
+    const latest = useMemoryStore.getState().memory
+    if (!latest.title.trim()) {
       toast.error('请给记忆起个名字吧')
       return
     }
     setSaving(true)
     try {
-      const savedMemory = { ...store.memory, updatedAt: new Date().toISOString() }
+      const savedMemory = { ...latest, updatedAt: new Date().toISOString() }
       await save(savedMemory)
-      store.markClean()
+      useMemoryStore.getState().markClean()
       setShowConfetti(true)
-      // Check achievements
-      getAllMemories().then((all) => {
-        checkAndUnlock(all, savedMemory).then((newBadges) => {
-          if (newBadges.length > 0) addToQueue(newBadges)
-        })
-      })
       setTimeout(() => setStep('saved'), 600)
     } catch {
       toast.error('保存失败，请重试')
@@ -109,22 +100,26 @@ export default function RecordPage() {
                     {id ? '编辑记忆' : '记录美好'}
                   </h1>
                   <p className="mt-1 text-sm text-text-muted">
-                    {id ? '修改你想更新的一切' : mode === 'quick' ? '随手记录，几秒钟搞定' : '闭上眼睛，回想那个时刻...'}
+                    {id
+                      ? '修改你想更新的一切'
+                      : mode === 'ai'
+                        ? '传照片 + 写一段话，AI 帮你填好九维度'
+                        : '闭上眼睛，回想那个时刻...'}
                   </p>
                 </div>
                 {/* Mode toggle */}
                 {!id && (
                   <div className="flex rounded-xl border border-border bg-bg p-0.5">
                     <button
-                      onClick={() => setMode('quick')}
+                      onClick={() => setMode('ai')}
                       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                        mode === 'quick'
+                        mode === 'ai'
                           ? 'bg-amber-500/20 text-amber-500'
                           : 'text-text-muted hover:text-text'
                       }`}
                     >
-                      <Zap className="h-3.5 w-3.5" />
-                      轻量
+                      <Sparkles className="h-3.5 w-3.5" />
+                      AI速记
                     </button>
                     <button
                       onClick={() => setMode('deep')}
@@ -142,20 +137,26 @@ export default function RecordPage() {
               </div>
             </div>
 
-            {mode === 'quick' && !id ? <QuickRecord /> : <MemoryForm />}
+            {mode === 'ai' && !id ? (
+              <AIQuickFill onSaved={handleSave} />
+            ) : (
+              <MemoryForm />
+            )}
 
-            {/* Save button */}
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-              <Button
-                variant="primary"
-                size="lg"
-                loading={saving}
-                onClick={handleSave}
-                className="shadow-2xl shadow-amber-500/20 min-w-[180px]"
-              >
-                保存这段记忆
-              </Button>
-            </div>
+            {/* Save button — only for quick/deep modes, AI has its own */}
+            {mode !== 'ai' && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  loading={saving}
+                  onClick={handleSave}
+                  className="shadow-2xl shadow-amber-500/20 min-w-[180px]"
+                >
+                  保存这段记忆
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

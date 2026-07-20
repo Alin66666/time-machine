@@ -191,7 +191,7 @@ export default function MemoryForm() {
                   onChange={(v) => update('visual', { dominantColors: v })}
                 />
                 <label className="text-xs text-text-muted">光线</label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {lightQualities.map((lq) => (
                     <button
                       key={lq}

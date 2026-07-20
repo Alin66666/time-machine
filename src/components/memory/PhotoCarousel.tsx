@@ -29,7 +29,7 @@ export default function PhotoCarousel({ photos, onDelete }: PhotoCarouselProps) 
 
   return (
     <div className="relative overflow-hidden rounded-2xl group/carousel">
-      <div className="aspect-[4/5] relative">
+      <div className="aspect-[4/3] relative">
         <AnimatePresence mode="wait">
           <motion.img
             key={current}

@@ -76,13 +76,19 @@ export async function importMemories(json: string): Promise<void> {
   await db.memories.bulkAdd(memories)
 }
 
-// === Achievements ===
+// === Chat operations ===
 
-export async function getEarnedBadges(): Promise<import('../types/memory').EarnedBadge[]> {
-  return db.achievements.toArray()
+import type { ChatRecord } from '../types/memory'
+
+export async function getChatByMemoryId(memoryId: string): Promise<ChatRecord | undefined> {
+  return db.chats.where('memoryId').equals(memoryId).first()
 }
 
-export async function getAllBadgeIds(): Promise<Set<string>> {
-  const badges = await db.achievements.toCollection().primaryKeys()
-  return new Set(badges as string[])
+export async function saveChat(chat: ChatRecord): Promise<void> {
+  await db.chats.put(chat)
 }
+
+export async function deleteChatByMemoryId(memoryId: string): Promise<void> {
+  await db.chats.where('memoryId').equals(memoryId).delete()
+}
+

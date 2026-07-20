@@ -24,7 +24,7 @@ export default function MemoryCard({ memory, onToggleFavorite, onDelete }: Memor
       <Link to={`/revisit/${memory.id}`} className="relative flex flex-col flex-1">
 
       {/* Photo or placeholder */}
-      <div className="relative aspect-[3/4] overflow-hidden">
+      <div className="relative aspect-[4/3] overflow-hidden">
         {hasPhotos ? (
           <img
             src={dimensions.visual.photos[0]}
@@ -67,7 +67,7 @@ export default function MemoryCard({ memory, onToggleFavorite, onDelete }: Memor
         <h3 className="font-medium text-text truncate">{memory.title || '未命名记忆'}</h3>
         <p className="mt-0.5 text-xs text-text-muted">{formatDateShort(memory.actualDate)}</p>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1.5">
           {emotionDef && (
             <span className="inline-flex items-center gap-0.5 rounded-md bg-white/5 px-1.5 py-0.5 text-xs text-text-muted">
               {emotionDef.emoji}

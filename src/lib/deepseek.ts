@@ -266,3 +266,115 @@ export async function quickGuess(
   )
   return extractJson(text) as { emotion?: string; tags?: string[]; title?: string }
 }
+
+export async function fillDimensions(
+  photoCount: number,
+  freeText: string,
+  title?: string
+): Promise<{
+  title?: string
+  emotion?: string
+  moodIntensity?: number
+  moodDescription?: string
+  emotionalTags?: string[]
+  visualDescription?: string
+  dominantColors?: string[]
+  lightQuality?: string
+  sounds?: string[]
+  music?: string
+  audioDescription?: string
+  flavors?: string[]
+  foodAndDrinks?: string[]
+  tasteDescription?: string
+  scents?: string[]
+  smellDescription?: string
+  textures?: string[]
+  temperature?: string
+  physicalSensations?: string
+  touchDescription?: string
+  location?: string
+  weather?: string
+  setting?: string
+  environmentDescription?: string
+  items?: Array<{ name: string; description: string }>
+  objectsDescription?: string
+  people?: Array<{ name: string; role: string; dynamic: string }>
+  relationshipDescription?: string
+  tags?: string[]
+  themeTags?: string[]
+  summary?: string
+}> {
+  const text = await chat(
+    [
+      {
+        role: 'system',
+        content: `你是一个善于观察和感受的"记忆策展人"。用户上传了${photoCount}张照片并写了一段自由文字。你需要从这些素材中，尽可能多地提取九维度感官信息。
+
+九个维度：
+1. 主体感受（primaryEmotion, moodIntensity 1-10, moodDescription, emotionalTags）
+2. 视觉（visualDescription, dominantColors[], lightQuality）
+3. 听觉（sounds[], music, audioDescription）
+4. 味觉（flavors[], foodAndDrinks[], tasteDescription）
+5. 嗅觉（scents[], smellDescription）
+6. 触觉（textures[], temperature, physicalSensations, touchDescription）
+7. 环境（location, weather, setting, environmentDescription）
+8. 物件（items[{name,description}], objectsDescription）
+9. 关系（people[{name,role,dynamic}], relationshipDescription）
+
+重要原则：
+- 只从用户素材中提取，读不到就留空，绝不杜撰
+- 从照片内容推断：场景、颜色、光线、人物、物品、天气
+- 从自由文字提取：用户明确提到的任何感官信息
+- 情绪标签 2-3 个，主题标签 3-5 个
+- 生成一段 2-3 句的诗意总结
+
+返回纯JSON，不要markdown包裹。`,
+      },
+      {
+        role: 'user',
+        content: `${title ? `记忆标题：「${title}」。` : ''}
+我上传了${photoCount}张照片，并写了下面这段话：
+
+"""
+${freeText || '（没有额外文字描述）'}
+"""
+
+请从照片和文字中提取所有能识别的维度信息。JSON格式：
+{
+  "emotion": "喜悦|宁静|感动|兴奋|忧伤|怀念|温暖|释然",
+  "moodIntensity": 7,
+  "moodDescription": "...",
+  "emotionalTags": ["...", "..."],
+  "visualDescription": "...",
+  "dominantColors": ["#xxx", "#xxx"],
+  "lightQuality": "...",
+  "sounds": ["...", "..."],
+  "music": "...",
+  "audioDescription": "...",
+  "flavors": ["...", "..."],
+  "foodAndDrinks": ["...", "..."],
+  "tasteDescription": "...",
+  "scents": ["...", "..."],
+  "smellDescription": "...",
+  "textures": ["...", "..."],
+  "temperature": "...",
+  "physicalSensations": "...",
+  "touchDescription": "...",
+  "location": "...",
+  "weather": "...",
+  "setting": "...",
+  "environmentDescription": "...",
+  "items": [{"name": "...", "description": "..."}],
+  "objectsDescription": "...",
+  "people": [{"name": "...", "role": "...", "dynamic": "..."}],
+  "relationshipDescription": "...",
+  "tags": ["...", "..."],
+  "themeTags": ["...", "..."],
+  "summary": "..."
+}`,
+      },
+    ],
+    { jsonMode: true, temperature: 0.7, maxTokens: 3000 }
+  )
+  return extractJson(text) as Record<string, unknown>
+}

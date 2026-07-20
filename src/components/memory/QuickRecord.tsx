@@ -97,7 +97,7 @@ export default function QuickRecord() {
           <div className="space-y-3">
             <div className="grid grid-cols-3 gap-2">
               {photos.map((photo, idx) => (
-                <div key={idx} className="relative aspect-[3/4] rounded-xl overflow-hidden">
+                <div key={idx} className="relative aspect-[4/3] rounded-xl overflow-hidden">
                   <img src={photo} alt="" className="h-full w-full object-cover" />
                   <button
                     onClick={() => removePhoto(idx)}
@@ -109,7 +109,7 @@ export default function QuickRecord() {
                 </div>
               ))}
               {photos.length < MAX_PHOTOS && (
-                <label className="aspect-[3/4] rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-amber-500/30 transition-colors">
+                <label className="aspect-[4/3] rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-amber-500/30 transition-colors">
                   <span className="text-2xl text-text-muted/30">+</span>
                   <input
                     type="file"
@@ -138,7 +138,7 @@ export default function QuickRecord() {
       {/* Title */}
       <div className="rounded-2xl border border-border bg-bg-card p-5">
         <Input
-          placeholder="给这段记忆起个名字（可选）"
+          placeholder="给这段记忆起个名字（必填）"
           value={memory.title}
           onChange={(e) => store.setTitle(e.target.value)}
           className="text-lg font-medium border-0 bg-transparent px-0 focus:ring-0"

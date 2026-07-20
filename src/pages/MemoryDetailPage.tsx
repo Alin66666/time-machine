@@ -7,10 +7,8 @@ import MemoryDetail from '../components/memory/MemoryDetail'
 import SharePoster from '../components/memory/SharePoster'
 import AIAssistant from '../components/ai/AIAssistant'
 import type { Memory } from '../types/memory'
-import { getMemoryById, updateMemory, getAllMemories } from '../db/operations'
+import { getMemoryById, updateMemory } from '../db/operations'
 import { useMemoryStore } from '../store/memoryStore'
-import { checkAndUnlock } from '../lib/achievements'
-import { useAchievementStore } from '../store/achievementStore'
 
 export default function MemoryDetailPage() {
   const { id } = useParams()
@@ -18,7 +16,6 @@ export default function MemoryDetailPage() {
   const [memory, setMemory] = useState<Memory | null>(null)
   const [loading, setLoading] = useState(true)
   const store = useMemoryStore()
-  const addToQueue = useAchievementStore((s) => s.addToQueue)
   const enrichedRef = useRef(false)
 
   useEffect(() => {
@@ -38,13 +35,7 @@ export default function MemoryDetailPage() {
           revisitCount: m.revisitCount + 1,
           lastRevisitedAt: new Date().toISOString(),
         }
-        updateMemory(updated).then(() => {
-          getAllMemories().then((all) => {
-            checkAndUnlock(all).then((newBadges) => {
-              if (newBadges.length > 0) addToQueue(newBadges)
-            })
-          })
-        })
+        updateMemory(updated)
       }
     })
   }, [id])
@@ -66,11 +57,6 @@ export default function MemoryDetailPage() {
     await updateMemory(updated)
     setMemory(updated)
     toast.success(updated.isFavorite ? '已收藏' : '已取消收藏')
-    getAllMemories().then((all) => {
-      checkAndUnlock(all).then((newBadges) => {
-        if (newBadges.length > 0) addToQueue(newBadges)
-      })
-    })
   }
 
   if (loading) {

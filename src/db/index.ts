@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { Memory, EarnedBadge } from '../types/memory'
+import type { Memory, ChatRecord } from '../types/memory'
 
 export interface MusicTrack {
   id: string
@@ -11,18 +11,14 @@ export interface MusicTrack {
 export class TimeMachineDB extends Dexie {
   memories!: EntityTable<Memory, 'id'>
   musicTracks!: EntityTable<MusicTrack, 'id'>
-  achievements!: EntityTable<EarnedBadge, 'id'>
+  chats!: EntityTable<ChatRecord, 'id'>
 
   constructor() {
     super('TimeMachineDB')
-    this.version(2).stores({
-      memories: 'id, actualDate, createdAt, isFavorite, tags',
-      musicTracks: 'id, addedAt',
-    })
     this.version(3).stores({
       memories: 'id, actualDate, createdAt, isFavorite, tags',
       musicTracks: 'id, addedAt',
-      achievements: 'id',
+      chats: 'id, memoryId',
     })
   }
 }

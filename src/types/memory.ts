@@ -127,6 +127,22 @@ export interface AIEnriched {
   suggestedPrompts?: string[];
 }
 
+// === Chat ===
+
+export interface ChatMessage {
+  role: 'ai' | 'user'
+  content: string
+}
+
+export interface ChatRecord {
+  id: string
+  memoryId: string
+  messages: ChatMessage[]
+  personality: string
+  createdAt: string
+  updatedAt: string
+}
+
 // === Settings ===
 
 export interface AppSettings {
@@ -153,25 +169,3 @@ export interface ResponsePayload {
 
 export type ImportMode = 'owner' | 'co-creator'
 
-// === Achievements ===
-
-export type BadgeTier = 'bronze' | 'silver' | 'gold' | 'diamond'
-
-export interface BadgeDef {
-  id: string
-  name: string
-  description: string
-  emoji: string
-  tier: BadgeTier
-  check: (ctx: AchievementContext) => boolean
-}
-
-export interface AchievementContext {
-  allMemories: Memory[]
-  currentMemory?: Memory
-}
-
-export interface EarnedBadge {
-  id: string
-  earnedAt: string
-}
