@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hourglass, ArrowRight } from 'lucide-react'
+import { Hourglass, ArrowRight, Share2, Copy, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '../ui/Button'
 import { useMemoryStore } from '../../store/memoryStore'
+import { useSettingsStore } from '../../store/settingsStore'
 import { formatDateShort } from '../../lib/utils'
 import { emotions } from '../../constants/emotions'
+import { generateInviteUrl } from '../../lib/share'
 
 interface SaveConfirmationProps {
   onRecordAnother: () => void
@@ -13,7 +17,36 @@ interface SaveConfirmationProps {
 
 export default function SaveConfirmation({ onRecordAnother, onViewMemory }: SaveConfirmationProps) {
   const { memory } = useMemoryStore()
+  const { userName } = useSettingsStore()
   const emotionDef = emotions.find((e) => e.id === memory.dimensions.subjectiveFeelings.primaryEmotion)
+  const [inviteUrl, setInviteUrl] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
+
+  const handleInvite = async () => {
+    if (!userName.trim()) {
+      toast.error('请先在设置页面填写你的称呼')
+      return
+    }
+    const url = await generateInviteUrl(
+      memory.id,
+      memory.title,
+      memory.actualDate,
+      memory.dimensions.environment.location,
+      memory.dimensions.visual.photos,
+      userName,
+      memory.dimensions.relationships.people.map((p) => p.name),
+    )
+    setInviteUrl(url)
+    setShowInvite(true)
+  }
+
+  const copyInviteLink = async () => {
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    toast.success('邀请链接已复制！分享给你的朋友吧')
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <motion.div
@@ -65,6 +98,40 @@ export default function SaveConfirmation({ onRecordAnother, onViewMemory }: Save
             </span>
           )}
         </div>
+      </motion.div>
+
+      {/* Invite co-creator */}
+      <motion.div
+        className="mt-4 w-full max-w-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+      >
+        {!showInvite ? (
+          <button
+            onClick={handleInvite}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/8 py-2.5 text-sm text-amber-500 hover:bg-amber-500/15 transition-colors"
+          >
+            <Share2 className="h-4 w-4" />
+            邀请朋友共创这段记忆
+          </button>
+        ) : (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+            <p className="text-xs text-text-muted mb-2">复制链接发给朋友，他们可以添加自己的视角：</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate text-xs text-text-muted/70 bg-bg rounded-lg px-2 py-1.5">
+                {inviteUrl.slice(0, 50)}...
+              </code>
+              <button
+                onClick={copyInviteLink}
+                className="shrink-0 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs text-amber-500 hover:bg-amber-500/30 transition-colors flex items-center gap-1"
+              >
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? '已复制' : '复制'}
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       <motion.div

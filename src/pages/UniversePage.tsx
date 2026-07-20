@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { Plus, ArrowLeft, Sparkles } from 'lucide-react'
+import { Plus, Sparkles, PenLine, Hourglass, Settings, Orbit } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import UniverseCanvas from '../components/universe/UniverseCanvas'
 import PlanetDetail from '../components/universe/PlanetDetail'
@@ -89,11 +89,47 @@ export default function UniversePage() {
       >
         <Link
           to="/"
-          className="flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-lg px-4 py-2 text-sm text-white/70 hover:text-white border border-white/5 hover:border-white/15 transition-all"
+          className="flex items-center gap-2 rounded-full bg-black/40 backdrop-blur-lg px-4 py-2 text-sm text-white/80 hover:text-white border border-white/5 hover:border-white/15 transition-all"
         >
-          <ArrowLeft className="h-4 w-4" />
-          返回
+          <Hourglass className="h-4 w-4 text-amber-500" />
+          <span className="hidden sm:inline font-medium tracking-wide">美好时光机</span>
         </Link>
+
+        {/* Navigation icons */}
+        <div className="flex items-center gap-1">
+          <Link
+            to="/record"
+            className="flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-lg px-3.5 py-2 text-sm text-white/70 hover:text-white border border-white/5 hover:border-white/15 transition-all"
+            title="记录美好"
+          >
+            <PenLine className="h-4 w-4" />
+            <span className="hidden sm:inline">记录</span>
+          </Link>
+          <Link
+            to="/revisit"
+            className="flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-lg px-3.5 py-2 text-sm text-white/70 hover:text-white border border-white/5 hover:border-white/15 transition-all"
+            title="重温时光"
+          >
+            <Hourglass className="h-4 w-4" />
+            <span className="hidden sm:inline">重温</span>
+          </Link>
+          <Link
+            to="/universe"
+            className="flex items-center gap-1.5 rounded-full bg-purple-500/20 backdrop-blur-lg px-3.5 py-2 text-sm text-purple-400 border border-purple-500/30 transition-all"
+            title="记忆宇宙"
+          >
+            <Orbit className="h-4 w-4" />
+            <span className="hidden sm:inline">宇宙</span>
+          </Link>
+          <Link
+            to="/settings"
+            className="flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-lg px-3.5 py-2 text-sm text-white/70 hover:text-white border border-white/5 hover:border-white/15 transition-all"
+            title="设置"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">设置</span>
+          </Link>
+        </div>
 
         <div className="flex items-center gap-2">
           <span className="text-sm text-white/50 hidden sm:inline font-serif tracking-wider">

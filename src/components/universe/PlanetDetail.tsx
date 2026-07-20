@@ -1,9 +1,13 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, MapPin, Sparkles, Edit3 } from 'lucide-react'
+import { X, MapPin, Sparkles, Edit3, Share2, Copy, Check, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import type { Memory } from '../../types/memory'
 import { formatDate } from '../../lib/utils'
 import { emotions } from '../../constants/emotions'
+import { generateInviteUrl } from '../../lib/share'
+import { useSettingsStore } from '../../store/settingsStore'
 import AIChat from './AIChat'
 
 interface PlanetDetailProps {
@@ -32,10 +36,41 @@ export default function PlanetDetail({ memory, onClose, onMemoryUpdate }: Planet
   const emotionDef = emotions.find((e) => e.id === memory.dimensions.subjectiveFeelings.primaryEmotion)
   const gradient = emotionDef?.gradient || 'from-bg-card to-bg-card'
   const completeness = getCompleteness(memory)
+  const { userName } = useSettingsStore()
+  const [inviteUrl, setInviteUrl] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
 
   const statusLabel = completeness < 20 ? '无光空心星' : completeness < 60 ? '轻度发光星' : '完整发光星球'
   const statusEmoji = completeness < 20 ? '🕳️' : completeness < 60 ? '✨' : '🌟'
   const statusColor = completeness < 20 ? 'text-text-muted/50' : completeness < 60 ? 'text-amber-500/70' : 'text-amber-500'
+
+  const hasPerspectives = memory.perspectives && memory.perspectives.length > 0
+
+  const handleInvite = async () => {
+    if (!userName.trim()) {
+      toast.error('请先在设置页面填写你的称呼')
+      return
+    }
+    const url = await generateInviteUrl(
+      memory.id,
+      memory.title,
+      memory.actualDate,
+      memory.dimensions.environment.location,
+      memory.dimensions.visual.photos,
+      userName,
+      memory.dimensions.relationships.people.map((p) => p.name),
+    )
+    setInviteUrl(url)
+    setShowInvite(true)
+  }
+
+  const copyInviteLink = async () => {
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    toast.success('邀请链接已复制！分享给你的朋友吧')
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <motion.div
@@ -114,6 +149,74 @@ export default function PlanetDetail({ memory, onClose, onMemoryUpdate }: Planet
         >
           <Edit3 className="h-3 w-3" /> 编辑
         </Link>
+      </div>
+
+      {/* Invite + Perspectives section */}
+      <div className="shrink-0 px-5 py-3 border-b border-border space-y-3">
+        {/* Invite button */}
+        {!showInvite ? (
+          <button
+            onClick={handleInvite}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/8 py-2.5 text-sm text-amber-500 hover:bg-amber-500/15 transition-colors"
+          >
+            <Share2 className="h-4 w-4" />
+            邀请朋友共创这段记忆
+          </button>
+        ) : (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+            <p className="text-xs text-text-muted mb-2">复制链接发给朋友，他们可以添加自己的视角：</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 truncate text-xs text-text-muted/70 bg-bg rounded-lg px-2 py-1.5">
+                {inviteUrl.slice(0, 60)}...
+              </code>
+              <button
+                onClick={copyInviteLink}
+                className="shrink-0 rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs text-amber-500 hover:bg-amber-500/30 transition-colors flex items-center gap-1"
+              >
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? '已复制' : '复制'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Existing perspectives */}
+        {hasPerspectives && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Users className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-xs text-text-muted">
+                已有 {memory.perspectives.length} 位朋友贡献了视角
+              </span>
+            </div>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {memory.perspectives.map((p) => {
+                const pEmotion = emotions.find((e) => e.id === p.dimensions.subjectiveFeelings.primaryEmotion)
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-border bg-white/3 px-3 py-2.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-text">{p.authorName}</span>
+                      {pEmotion && <span className="text-xs">{pEmotion.emoji}</span>}
+                      {p.messageToOwner && (
+                        <span className="text-xs text-text-muted/70 truncate flex-1">
+                          💌 {p.messageToOwner}
+                        </span>
+                      )}
+                    </div>
+                    {p.dimensions.subjectiveFeelings.moodDescription && (
+                      <p className="mt-1 text-xs text-text-muted line-clamp-2">
+                        {p.dimensions.subjectiveFeelings.moodDescription}
+                      </p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* AI Chat section */}

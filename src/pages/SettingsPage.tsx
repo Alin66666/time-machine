@@ -9,7 +9,7 @@ import { exportAllMemories, importMemories, getAllMemories } from '../db/operati
 import { downloadAllAsMarkdown, writeToObsidianVault } from '../lib/obsidian'
 
 export default function SettingsPage() {
-  const { apiKey, setApiKey } = useSettingsStore()
+  const { apiKey, setApiKey, userName, setUserName } = useSettingsStore()
   const music = useMusicStore()
   const [showKey, setShowKey] = useState(false)
   const [importing, setImporting] = useState(false)
@@ -149,6 +149,29 @@ export default function SettingsPage() {
               </span>
             )}
           </div>
+        </motion.div>
+
+        {/* User Name */}
+        <motion.div
+          className="rounded-2xl border border-border bg-bg-card p-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-lg">👤</span>
+            <h2 className="font-medium text-text">你的称呼</h2>
+          </div>
+          <p className="mb-4 text-xs leading-relaxed text-text-muted">
+            用于共创邀请时显示你的名字，让朋友知道是谁发出的邀请。
+          </p>
+          <input
+            type="text"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="输入你的名字或昵称..."
+            className="w-full rounded-xl border border-border bg-bg px-4 py-2.5 text-sm text-text placeholder:text-text-muted/50 focus:border-amber-500/50 focus:outline-none"
+          />
         </motion.div>
 
         {/* Background Music */}

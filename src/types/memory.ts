@@ -148,6 +148,7 @@ export interface ChatRecord {
 export interface AppSettings {
   apiKey: string;
   theme: 'auto' | 'light' | 'dark';
+  userName: string;
 }
 
 // === Co-creation Share Payloads ===

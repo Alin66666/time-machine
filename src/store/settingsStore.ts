@@ -6,7 +6,7 @@ function loadSettings(): AppSettings {
     const raw = localStorage.getItem('tm-settings')
     if (raw) return JSON.parse(raw)
   } catch { /* ignore */ }
-  return { apiKey: '', theme: 'auto' }
+  return { apiKey: '', theme: 'auto', userName: '' }
 }
 
 function saveSettings(s: AppSettings) {
@@ -16,6 +16,7 @@ function saveSettings(s: AppSettings) {
 interface SettingsStore extends AppSettings {
   setApiKey: (key: string) => void
   setTheme: (t: AppSettings['theme']) => void
+  setUserName: (name: string) => void
 }
 
 export const useSettingsStore = create<SettingsStore>((set) => ({
@@ -27,5 +28,9 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   setTheme: (theme) => {
     saveSettings({ ...loadSettings(), theme })
     set({ theme })
+  },
+  setUserName: (userName) => {
+    saveSettings({ ...loadSettings(), userName })
+    set({ userName })
   },
 }))

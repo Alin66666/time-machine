@@ -10,9 +10,7 @@ function getApiKey(): string {
       apiKey = JSON.parse(raw).apiKey || ''
     } catch { /* ignore */ }
   }
-  apiKey = apiKey.trim()
-  if (!apiKey) throw new Error('API Key 未设置')
-  return apiKey
+  return apiKey.trim()
 }
 
 interface ChatMessage {
@@ -36,19 +34,23 @@ async function chat(
     body.response_format = { type: 'json_object' }
   }
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`
+  }
+
   const res = await fetch(API_BASE, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers,
     body: JSON.stringify(body),
   })
 
   if (!res.ok) {
     const err = await res.text()
-    if (res.status === 401) throw new Error('API Key 无效')
-    if (res.status === 402) throw new Error('API 余额不足')
+    if (res.status === 401) throw new Error('AI 服务未配置，请联系作者')
+    if (res.status === 402) throw new Error('AI 服务余额不足，请联系作者')
     throw new Error(`API 错误 (${res.status}): ${err}`)
   }
 

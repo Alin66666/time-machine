@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useSettingsStore } from '../../store/settingsStore'
 import { chatWithContext } from '../../lib/deepseek'
 import type { Memory, ChatRecord } from '../../types/memory'
+import { emotions } from '../../constants/emotions'
 import { updateMemory, getChatByMemoryId, saveChat } from '../../db/operations'
 
 interface Message {
@@ -32,20 +33,22 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
   const [phase, setPhase] = useState<'intro' | 'chatting'>('intro')
   const { apiKey } = useSettingsStore()
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const historyRef = useRef<Message[]>([]) // Hidden historical context, never displayed
 
-  // Load existing chat from DB on mount (pre-select personality, don't skip intro)
+  // Load existing chat history into hidden ref (pre-select personality, don't skip intro)
   useEffect(() => {
     getChatByMemoryId(memory.id).then((chat) => {
       if (chat && chat.messages.length > 0) {
-        setMessages(chat.messages)
+        historyRef.current = chat.messages
         const savedPersonality = personalities.find((p) => p.id === chat.personality)
         if (savedPersonality) setPersonality(savedPersonality)
       } else {
-        // Different memory with no chat — reset everything
-        setMessages([])
+        historyRef.current = []
         setPhase('intro')
         setPersonality(personalities[0])
       }
+      // Always start with a clean dialog
+      setMessages([])
     })
   }, [memory.id])
 
@@ -53,18 +56,43 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const persistChat = (msgs: Message[], pers: string) => {
+  const persistChat = (newMsgs: Message[], pers: string) => {
     getChatByMemoryId(memory.id).then((existing) => {
+      // Merge history with new messages so the full context is stored for future sessions
+      const allMessages = [...historyRef.current, ...newMsgs]
       const record: ChatRecord = {
         id: `chat_${memory.id}`,
         memoryId: memory.id,
-        messages: msgs,
+        messages: allMessages,
         personality: pers,
         createdAt: existing?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
       saveChat(record)
     })
+  }
+
+  // Build a compact history summary for the AI system prompt
+  const buildHistoryContext = (): string => {
+    if (historyRef.current.length === 0) return ''
+    const recent = historyRef.current.slice(-12) // Last 6 exchanges to keep context manageable
+    const lines = recent.map((m) => `${m.role === 'ai' ? 'AI' : '用户'}: ${m.content}`).join('\n')
+    return `\n## 你们之前的对话历史（供你回忆上下文，不要在对话中复述或提及这些历史内容，除非用户主动提到）:\n${lines}\n`
+  }
+
+  // Build perspectives context for AI
+  const buildPerspectivesContext = (): string => {
+    const perspectives = memory.perspectives
+    if (!perspectives || perspectives.length === 0) return ''
+    const parts = perspectives.map((p) => {
+      const emotionDef = emotions.find((e) => e.id === p.dimensions.subjectiveFeelings.primaryEmotion)
+      return `${p.authorName}的视角（${emotionDef?.label || '未知情绪'}）：
+  - 感受：${p.dimensions.subjectiveFeelings.moodDescription || '未填写'}
+  - 看到的：${p.dimensions.visual.visualDescription || '未填写'}
+  - 听到的：${p.dimensions.auditory.audioDescription || p.dimensions.auditory.sounds.join('、') || '未填写'}
+  - 留言给创建者：${p.messageToOwner || '无'}`
+    })
+    return `\n## 朋友们对这段共同回忆的视角（这是你们共享的回忆，你可以引用他们的视角来丰富对话）:\n${parts.join('\n\n')}\n`
   }
 
   const getMissingDimensions = (): string[] => {
@@ -83,20 +111,12 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
   }
 
   const startChat = async () => {
-    if (!apiKey) {
-      toast.error('请先在设置页面配置 DeepSeek API Key')
-      return
-    }
-
     setPhase('chatting')
 
-    // If we already have messages from DB, just continue — user picked a style (maybe changed it)
-    if (messages.length > 0) {
-      persistChat(messages, personality.id)
-      return
-    }
-
     const missing = getMissingDimensions()
+
+    const historyCtx = buildHistoryContext()
+    const perspectivesCtx = buildPerspectivesContext()
 
     if (missing.length === 0) {
       const msg = { role: 'ai' as const, content: '你的这颗星球已经很丰满了！✨ 每一段记忆都闪闪发光。我们随便聊聊吧，关于这段时光，你还有什么想分享的吗？' }
@@ -115,7 +135,7 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
 - 标题：${memory.title || '未命名'}
 - 已记录的信息：${JSON.stringify(memory.dimensions, null, 2)}
 - 还缺少的维度：${missing.join('、')}
-
+${historyCtx}${perspectivesCtx}
 你的任务是：像朋友聊天一样，自然地引导用户补充这些缺失的维度信息。
 每次只说1-2句话，提1个具体的问题。不要一次性问太多。
 记住：你不是AI助手，你是${personality.label}的朋友。用口语化的方式交流。`
@@ -143,6 +163,8 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
 
     try {
       const missing = getMissingDimensions()
+      const historyCtx = buildHistoryContext()
+      const perspectivesCtx = buildPerspectivesContext()
 
       const systemPrompt = `${personality.prompt}
 你是用户的记忆伙伴，正在帮用户丰富一段记忆。用户刚分享了新的内容，你需要：
@@ -153,6 +175,7 @@ export default function AIChat({ memory, onMemoryUpdate }: AIChatProps) {
 记忆当前状态：
 ${JSON.stringify(memory.dimensions, null, 2)}
 还缺少的维度：${missing.length > 0 ? missing.join('、') : '基本完整'}
+${historyCtx}${perspectivesCtx}
 
 回复格式：先写对话内容（1-3句话），如果需要更新记忆信息，在最后用JSON代码块输出：
 \`\`\`json

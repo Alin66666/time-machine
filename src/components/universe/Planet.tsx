@@ -164,6 +164,7 @@ export default function Planet({ memory, position, onClick, isSelected }: Planet
   }, [completeness])
 
   const showRing = completeness >= 0.6
+  const hasPerspectives = memory.perspectives && memory.perspectives.length > 0
 
   // Textures
   const gradientTex = useMemo(() => {
@@ -289,6 +290,17 @@ export default function Planet({ memory, position, onClick, isSelected }: Planet
           </mesh>
           {/* Dot particle ring */}
           <DotRing baseSize={baseSize} color={emotionColor} tiltX={Math.PI / 2.5} tiltY={0.2} speed={-1.5} dotCount={60} />
+        </group>
+      )}
+
+      {/* Shared memory golden ring */}
+      {hasPerspectives && (
+        <group>
+          <mesh rotation={[Math.PI / 2.2, 0.5, 0.1]}>
+            <torusGeometry args={[baseSize * 1.7, 0.02, 16, 150]} />
+            <meshBasicMaterial color="#FFD54F" transparent opacity={0.5} depthWrite={false} />
+          </mesh>
+          <DotRing baseSize={baseSize} color="#FFD54F" tiltX={Math.PI / 2.2} tiltY={0.5} speed={1.2} dotCount={40} />
         </group>
       )}
 
